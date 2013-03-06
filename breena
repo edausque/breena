@@ -1,4 +1,10 @@
 #!/usr/bin/perl
+# could be helpful:
+# http://poe.perl.org/?POE_Cookbook/IRC_Bots
+# http://poe.perl.org/?POE_Cookbook/IRC_Bot_Debugging
+# http://poe.perl.org/?POE_Cookbook/IRC_Bot_Disconnecting
+# http://poe.perl.org/?POE_Cookbook/IRC_Bot_Reconnecting
+
 use warnings;
 use strict;
 use POSIX qw(strftime);
@@ -17,15 +23,12 @@ my $conf_server = $conf->param("server");
 my $conf_channel = $conf->param("channel");
 my $conf_debug = $conf->param("debug");
 
-my @timers;
+my @db_timers;
 
 sub CHANNEL () { "$conf_channel" }
 
-# Create the component that will represent an IRC network.
 my ($irc) = POE::Component::IRC->spawn();
 
-# Create the bot session.  The new() call specifies the events the bot
-# knows about and the functions that will handle those events.
 POE::Session->create(
   inline_states => {
     _start     => \&bot_start,
@@ -36,8 +39,6 @@ POE::Session->create(
   },
 );
 
-# The bot session has started.  Register this bot with the "magnet"
-# IRC component.  Select a nickname.  Connect to a server.
 sub bot_start {
   $irc->yield(register => "all");
   $irc->yield(
@@ -52,13 +53,10 @@ sub bot_start {
   );
 }
 
-# The bot has successfully connected to a server.  Join a channel.
 sub on_connect {
   $irc->yield(join => CHANNEL);
 }
 
-# The bot has received a public message.  Parse it for commands, and
-# respond to interesting things.
 sub irc_ctcp_action {
   my ($sender, $who, $where, $what) = @_[SENDER, ARG0 .. ARG2];
   my $nick = ( split /!/, $who )[0];
@@ -93,34 +91,35 @@ sub on_public {
     $irc->yield(ctcp => $channel => "ACTION danse.");
   }
 
-  if ($msg =~ /^time curitiba$/) {
+  if ($msg =~ /^time .*/) {
+    $irc->yield(privmsg => $channel => "only \".time curitiba\" is available");
+  }
+
+  if ($msg =~ /^.time curitiba$/) {
     my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime(time-10800);
     $irc->yield(privmsg => $channel => "$now_string");
   }
 
-  if ($msg =~ /^.conj.*? (.*)/) {
+  if ($msg =~ /^\.conj.*? (.*)/) {
     $irc->yield(privmsg => $channel => "http://www.vatefaireconjuguer.com/search?verb=$1");
   }
 
-  if ($msg =~ /^t(\d*?) (.*)$/) {
+  if ($msg =~ /^\.timer (\d*)(.*)$/) {
     my $time = time();
-    $irc->yield(privmsg => $channel => "debut timer $2");
+    $irc->yield(privmsg => $channel => "debut timer $2 ($1)");
 
     $time+=$1;
-    push @timers, { time => "$time", nick => "$nick", task => "$2"};
-    @timers =  sort { $a->{time} <=> $b->{time} } @timers;
-    print Dumper(\@timers);
+    push @db_timers, { time => "$time", nick => "$nick", task => "$2"};
+    @db_timers =  sort { $a->{time} <=> $b->{time} } @db_timers;
+    print Dumper(\@db_timers);
 
     #alarm($1);
   }
 
-  if ($msg =~ /^.anglais (.*)/) {
+  if ($msg =~ /^\.anglais (.*)/) {
     $irc->yield(privmsg => $channel => "http://www.anglais-conjugaison.com/search?verb=$1");
   }
 }
 
-
-
-# Run the bot until it is done.
 $poe_kernel->run();
 exit 0;
