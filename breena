@@ -1,0 +1,126 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use POSIX qw(strftime);
+use POE;
+use POE::Component::IRC;
+use Time::HiRes qw(time);
+use Config::Simple;
+use Data::Dumper;
+
+my ($dirpath) = (__FILE__ =~ m{^(.*/)?.*}s);
+my $conf_file = "${dirpath}breena.conf";
+
+my $conf = new Config::Simple("$conf_file") or die "impossible de trouver $conf_file";
+my $conf_nick = $conf->param("nick");
+my $conf_server = $conf->param("server");
+my $conf_channel = $conf->param("channel");
+my $conf_debug = $conf->param("debug");
+
+my @timers;
+
+sub CHANNEL () { "$conf_channel" }
+
+# Create the component that will represent an IRC network.
+my ($irc) = POE::Component::IRC->spawn();
+
+# Create the bot session.  The new() call specifies the events the bot
+# knows about and the functions that will handle those events.
+POE::Session->create(
+  inline_states => {
+    _start     => \&bot_start,
+    irc_001    => \&on_connect,
+    irc_public => \&on_public,
+    irc_ctcp_action => \&irc_ctcp_action,
+    irc_quit => \&on_quit,
+  },
+);
+
+# The bot session has started.  Register this bot with the "magnet"
+# IRC component.  Select a nickname.  Connect to a server.
+sub bot_start {
+  $irc->yield(register => "all");
+  $irc->yield(
+    connect => {
+      Nick     => "$conf_nick",
+      Username => "$conf_nick",
+      Ircname  => 'POE::Component::IRC (Perl)',
+      Server   => "$conf_server",
+      Port     => '6667',
+      debug    => "$conf_debug",
+    }
+  );
+}
+
+# The bot has successfully connected to a server.  Join a channel.
+sub on_connect {
+  $irc->yield(join => CHANNEL);
+}
+
+# The bot has received a public message.  Parse it for commands, and
+# respond to interesting things.
+sub irc_ctcp_action {
+  my ($sender, $who, $where, $what) = @_[SENDER, ARG0 .. ARG2];
+  my $nick = ( split /!/, $who )[0];
+  my $channel = $where->[0];
+  if($what =~ /^(.*)$conf_nick(.*)$/) {
+    $irc->yield(ctcp => $channel => "ACTION $1$nick$2");
+  }
+  return;
+}
+
+sub on_quit {
+  my ($kernel, $who, $msg) = @_[KERNEL, ARG0, ARG1];
+  my $nick    = (split /!/, $who)[0];
+  my $ts      = scalar localtime;
+  if (($msg =~ /^Ping timeout$/) && ($nick eq 'Christina')) {
+    $irc->yield(privmsg => "$conf_channel" => "hihihi");
+  }
+}
+
+$SIG{ALRM} = sub {
+  my $test = time();
+  $irc->yield(privmsg => "$conf_channel" => "fin timer ($test)")
+};
+
+sub on_public {
+  my ($kernel, $who, $where, $msg) = @_[KERNEL, ARG0, ARG1, ARG2];
+  my $nick    = (split /!/, $who)[0];
+  my $channel = $where->[0];
+  my $ts      = scalar localtime;
+
+  if ($msg =~ /^$conf_nick.*danse$/) {
+    $irc->yield(ctcp => $channel => "ACTION danse.");
+  }
+
+  if ($msg =~ /^time curitiba$/) {
+    my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime(time-10800);
+    $irc->yield(privmsg => $channel => "$now_string");
+  }
+
+  if ($msg =~ /^.conj.*? (.*)/) {
+    $irc->yield(privmsg => $channel => "http://www.vatefaireconjuguer.com/search?verb=$1");
+  }
+
+  if ($msg =~ /^t(\d*?) (.*)$/) {
+    my $time = time();
+    $irc->yield(privmsg => $channel => "debut timer $2");
+
+    $time+=$1;
+    push @timers, { time => "$time", nick => "$nick", task => "$2"};
+    @timers =  sort { $a->{time} <=> $b->{time} } @timers;
+    print Dumper(\@timers);
+
+    #alarm($1);
+  }
+
+  if ($msg =~ /^.anglais (.*)/) {
+    $irc->yield(privmsg => $channel => "http://www.anglais-conjugaison.com/search?verb=$1");
+  }
+}
+
+
+
+# Run the bot until it is done.
+$poe_kernel->run();
+exit 0;
