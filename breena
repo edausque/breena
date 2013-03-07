@@ -36,6 +36,7 @@ POE::Session->create(
     irc_public => \&on_public,
     irc_ctcp_action => \&irc_ctcp_action,
     irc_quit => \&on_quit,
+    bot_timer => \&bot_timer,
   },
 );
 
@@ -81,6 +82,10 @@ $SIG{ALRM} = sub {
   $irc->yield(privmsg => "$conf_channel" => "fin timer ($test)")
 };
 
+sub bot_timer {
+  $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: ding $_[ARG0]")
+}
+
 sub on_public {
   my ($kernel, $who, $where, $msg) = @_[KERNEL, ARG0, ARG1, ARG2];
   my $nick    = (split /!/, $who)[0];
@@ -104,16 +109,9 @@ sub on_public {
     $irc->yield(privmsg => $channel => "http://www.vatefaireconjuguer.com/search?verb=$1");
   }
 
-  if ($msg =~ /^\.timer (\d*)(.*)$/) {
-    my $time = time();
-    $irc->yield(privmsg => $channel => "debut timer $2 ($1)");
-
-    $time+=$1;
-    push @db_timers, { time => "$time", nick => "$nick", task => "$2"};
-    @db_timers =  sort { $a->{time} <=> $b->{time} } @db_timers;
-    print Dumper(\@db_timers);
-
-    #alarm($1);
+  if ($msg =~ /^t (\d*)(.*)$/) {
+    $irc->yield(privmsg => $channel => "timer$2 ($1 seconds)");
+    $_[KERNEL]->delay_add(bot_timer => $1, $2, $nick);
   }
 
   if ($msg =~ /^\.anglais (.*)/) {
