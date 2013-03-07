@@ -31,16 +31,18 @@ my ($irc) = POE::Component::IRC->spawn();
 
 POE::Session->create(
   inline_states => {
-    _start     => \&bot_start,
-    irc_001    => \&on_connect,
-    irc_public => \&on_public,
-    irc_ctcp_action => \&irc_ctcp_action,
-    irc_quit => \&on_quit,
-    bot_timer => \&bot_timer,
+    _start		=> \&bot_start,
+    irc_001		=> \&on_connect,
+    irc_public		=> \&on_public,
+    irc_ctcp_action	=> \&irc_ctcp_action,
+    irc_quit		=> \&on_quit,
+    irc_disconnected	=> \&bot_reconnect,
+    bot_timer		=> \&bot_timer,
+    connect		=> \&bot_connect,
   },
 );
 
-sub bot_start {
+sub bot_connect {
   $irc->yield(register => "all");
   $irc->yield(
     connect => {
@@ -54,8 +56,18 @@ sub bot_start {
   );
 }
 
+sub bot_start {
+  my ($kernel, $heap) = @_[KERNEL, HEAP];
+  $kernel->yield("connect");
+}
+
 sub on_connect {
   $irc->yield(join => CHANNEL);
+}
+
+sub bot_reconnect {
+  my ($kernel, $heap) = @_[KERNEL, HEAP];
+  $kernel->delay(connect => 60);
 }
 
 sub irc_ctcp_action {
