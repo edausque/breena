@@ -32,13 +32,13 @@ my ($irc) = POE::Component::IRC->spawn();
 POE::Session->create(
   inline_states => {
     _start		=> \&bot_start,
+    connect		=> \&bot_connect,
     irc_001		=> \&on_connect,
     irc_public		=> \&on_public,
-    irc_ctcp_action	=> \&irc_ctcp_action,
+    irc_ctcp_action	=> \&on_ctcp_action,
     irc_quit		=> \&on_quit,
     irc_disconnected	=> \&bot_reconnect,
     bot_timer		=> \&bot_timer,
-    connect		=> \&bot_connect,
   },
 );
 
@@ -70,7 +70,7 @@ sub bot_reconnect {
   $kernel->delay(connect => 60);
 }
 
-sub irc_ctcp_action {
+sub on_ctcp_action {
   my ($sender, $who, $where, $what) = @_[SENDER, ARG0 .. ARG2];
   my $nick = ( split /!/, $who )[0];
   my $channel = $where->[0];
@@ -89,13 +89,8 @@ sub on_quit {
   }
 }
 
-$SIG{ALRM} = sub {
-  my $test = time();
-  $irc->yield(privmsg => "$conf_channel" => "fin timer ($test)")
-};
-
 sub bot_timer {
-  $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: ding $_[ARG0]")
+  $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: DING!$_[ARG0]")
 }
 
 sub on_public {
@@ -112,7 +107,7 @@ sub on_public {
     $irc->yield(privmsg => $channel => "only \".time curitiba\" is available");
   }
 
-  if ($msg =~ /^.time curitiba$/) {
+  if ($msg =~ /^\.time curitiba$/) {
     my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime(time-10800);
     $irc->yield(privmsg => $channel => "$now_string");
   }
@@ -122,7 +117,7 @@ sub on_public {
   }
 
   if ($msg =~ /^t (\d*)(.*)$/) {
-    $irc->yield(privmsg => $channel => "timer$2 ($1 seconds)");
+    $irc->yield(privmsg => $channel => "[timer added]$2 ($1 seconds)");
     $_[KERNEL]->delay_add(bot_timer => $1, $2, $nick);
   }
 
