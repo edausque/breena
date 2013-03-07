@@ -65,7 +65,8 @@ sub bot_start {
 sub on_connect {
   $irc->yield(privmsg => 'nickserv' => "identify $conf_nickserv");
   $irc->yield(join => CHANNEL);
-  $irc->delay([ mode => $conf_channel => '-a' => $conf_nick ], 2);
+  $irc->delay([ mode => $conf_channel => '-a' => $conf_nick ], 3);
+  $irc->yield(privmsg => 'chanserv' => "op");
 }
 
 sub bot_reconnect {
