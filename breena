@@ -120,9 +120,17 @@ sub on_public {
     $irc->yield(privmsg => $channel => "http://www.vatefaireconjuguer.com/search?verb=$1");
   }
 
-  if ($msg =~ /^t (\d*)(.*)$/) {
-    $irc->yield(privmsg => $channel => "[timer added]$2 ($1 seconds)");
-    $_[KERNEL]->delay_add(bot_timer => $1, $2, $nick);
+  if ($msg =~ /^t\s(\S*)\s*(.*?)$/) {
+    my $seconds = $1;
+    $seconds =~ s/[^mhd\d]//g; 
+    $seconds =~ s/(\d+)(\w{1})(\d+)/$1$2+$3/g;
+    $seconds =~ s/(\d+)(\w{1})(\d+)/$1$2+$3/g;
+    $seconds =~ s/m/*60/g; 
+    $seconds =~ s/h/*3600/g; 
+    $seconds =~ s/d/*3600*24/g; 
+    $seconds = eval($seconds);
+    $irc->yield(privmsg => $channel => "[timer added]$2 ($seconds seconds)");
+    $_[KERNEL]->delay_add(bot_timer => $seconds, $2, $nick);
   }
 
   if ($msg =~ /^\.anglais (.*)/) {
