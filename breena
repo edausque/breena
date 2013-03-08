@@ -130,8 +130,12 @@ sub on_public {
     $seconds =~ s/h/*3600/g; 
     $seconds =~ s/d/*3600*24/g; 
     $seconds = eval($seconds);
-    $irc->yield(privmsg => $channel => "[timer added]$task ($seconds seconds)");
-    $_[KERNEL]->delay_add(bot_timer => $seconds, $task, $nick);
+    if($seconds =~ /^\d+$/) {
+      $irc->yield(privmsg => $channel => "[timer added] $task ($seconds seconds)");
+      $_[KERNEL]->delay_add(bot_timer => $seconds, $task, $nick);
+    } else {
+      $irc->yield(privmsg => $channel => "$nick, usage: t 1d2h42m10s [task]");
+    }
   }
 
   if ($msg =~ /^\.anglais (.*)/) {
