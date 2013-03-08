@@ -94,7 +94,7 @@ sub on_quit {
 }
 
 sub bot_timer {
-  $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: DING!$_[ARG0]")
+  $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: ding!$_[ARG0]")
 }
 
 sub on_public {
@@ -122,7 +122,7 @@ sub on_public {
 
   if ($msg =~ /^t\s(\S*)\s*(.*?)$/) {
     my $seconds = $1;
-    my $task = $2;
+    my $task = " $2";
     $seconds =~ s/[^mhd\d]//g; 
     $seconds =~ s/(\d+)(\w{1})(\d+)/$1$2+$3/g;
     $seconds =~ s/(\d+)(\w{1})(\d+)/$1$2+$3/g;
@@ -131,7 +131,7 @@ sub on_public {
     $seconds =~ s/d/*3600*24/g; 
     $seconds = eval($seconds);
     if($seconds =~ /^\d+$/) {
-      $irc->yield(privmsg => $channel => "[timer added] $task ($seconds seconds)");
+      $irc->yield(privmsg => $channel => "[timer added]$task ($seconds seconds)");
       $_[KERNEL]->delay_add(bot_timer => $seconds, $task, $nick);
     } else {
       $irc->yield(privmsg => $channel => "$nick, usage: t 1d2h42m10s [task]");
