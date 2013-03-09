@@ -13,9 +13,9 @@ use POE::Component::IRC;
 use Time::HiRes qw(time);
 use Config::Simple;
 use Data::Dumper;
-use Plugins::Danse;
 
 my ($dirpath) = (__FILE__ =~ m{^(.*/)?.*}s);
+if(!$dirpath) { $dirpath = "./"; }
 my $conf_file = "${dirpath}breena.conf";
 
 my $conf = new Config::Simple("$conf_file") or die "impossible de trouver $conf_file";
@@ -44,8 +44,25 @@ POE::Session->create(
   },
 );
 
-my $danse_plugin = Plugins::Danse->new();
-$irc->plugin_add('Danse',$danse_plugin);
+opendir my($dh), "${dirpath}Plugins" or die "Couldn't open dir '$dirpath': $!";
+my @plugins_files = readdir $dh;
+closedir $dh;
+foreach my $plugin (@plugins_files)
+{
+  if($plugin =~ m/^([A-Za-z0-9]+)\.pm$/) {
+    print "Load plugin: $1\n";
+    my $module = "Plugins::$1";
+    eval {
+      (my $file = $module) =~ s|::|/|g;
+      require $file . '.pm';
+      my $loading_plugin = $module->new();
+      $irc->plugin_add($module,$loading_plugin);
+    };
+    if ($@) {
+      warn "Error including $module: $@";
+    }
+  }
+}
 
 sub bot_connect {
   $irc->yield(register => "all");
