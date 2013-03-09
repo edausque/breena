@@ -3,3 +3,4 @@ nickserv: password
 channel: #breena
 server: chat.freenode.net
 debug: false
+google-api: 

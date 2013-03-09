@@ -74,6 +74,7 @@ sub bot_connect {
       Server   => "$conf_server",
       Port     => '6667',
       debug    => "$conf_debug",
+      plugin_debug    => "$conf_debug",
     }
   );
 }

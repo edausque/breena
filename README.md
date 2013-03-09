@@ -5,7 +5,7 @@
 ### Debian
 
 ```bash
-apt-get install libpoe-component-irc-perl libconfig-simple-perl
+apt-get install libpoe-component-irc-perl libconfig-simple-perl libwww-perl
 ```
 
 ## Settings
