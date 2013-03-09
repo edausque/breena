@@ -13,6 +13,7 @@ use POE::Component::IRC;
 use Time::HiRes qw(time);
 use Config::Simple;
 use Data::Dumper;
+use Plugins::Danse;
 
 my ($dirpath) = (__FILE__ =~ m{^(.*/)?.*}s);
 my $conf_file = "${dirpath}breena.conf";
@@ -42,6 +43,9 @@ POE::Session->create(
     bot_timer		=> \&bot_timer,
   },
 );
+
+my $danse_plugin = Plugins::Danse->new();
+$irc->plugin_add('Danse',$danse_plugin);
 
 sub bot_connect {
   $irc->yield(register => "all");
@@ -102,10 +106,6 @@ sub on_public {
   my $nick    = (split /!/, $who)[0];
   my $channel = $where->[0];
   my $ts      = scalar localtime;
-
-  if ($msg =~ /^$conf_nick.*danse$/) {
-    $irc->yield(ctcp => $channel => "ACTION danse.");
-  }
 
   if ($msg =~ /^time .*/) {
     $irc->yield(privmsg => $channel => "only \".time curitiba\" is available");
