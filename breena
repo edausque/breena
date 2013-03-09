@@ -124,15 +124,6 @@ sub on_public {
   my $channel = $where->[0];
   my $ts      = scalar localtime;
 
-  if ($msg =~ /^time .*/) {
-    $irc->yield(privmsg => $channel => "only \".time curitiba\" is available");
-  }
-
-  if ($msg =~ /^\.time curitiba$/) {
-    my $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime(time-10800);
-    $irc->yield(privmsg => $channel => "$now_string");
-  }
-
   if ($msg =~ /^t\s(\S*)\s*(.*?)$/) {
     my $seconds = $1;
     my $task = " $2";
