@@ -133,10 +133,6 @@ sub on_public {
     $irc->yield(privmsg => $channel => "$now_string");
   }
 
-  if ($msg =~ /^\.conj.*? (.*)/) {
-    $irc->yield(privmsg => $channel => "http://www.vatefaireconjuguer.com/search?verb=$1");
-  }
-
   if ($msg =~ /^t\s(\S*)\s*(.*?)$/) {
     my $seconds = $1;
     my $task = " $2";
@@ -153,10 +149,6 @@ sub on_public {
     } else {
       $irc->yield(privmsg => $channel => "$nick, usage: t 1d2h42m10s [task]");
     }
-  }
-
-  if ($msg =~ /^\.anglais (.*)/) {
-    $irc->yield(privmsg => $channel => "http://www.anglais-conjugaison.com/search?verb=$1");
   }
 }
 
