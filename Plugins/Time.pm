@@ -7,7 +7,7 @@ use POE;
 use POE::Component::IRC::Plugin qw( :ALL );
 use Config::Simple;
 use LWP::Simple;
-use JSON::Parse 'json_to_perl';
+use JSON;
 use Data::Dumper;
 
 my ($dirpath) = (__FILE__ =~ m{^(.*/)?.*}s);
@@ -61,12 +61,12 @@ sub S_public {
     $address =~ s/\s//g;
     my $now_string = "Data not found.";
     my $geocode_json = get("https://maps.googleapis.com/maps/api/geocode/json?address=".$address."&sensor=false&language=fr&region=fr&api=".$conf_google_api);
-    my $geocode = json_to_perl($geocode_json);
+    my $geocode = from_json($geocode_json);
     if($geocode->{'status'} eq 'OK') {
       my $loc = $geocode->{'results'}[0]->{'geometry'}->{'location'};
       my $req = "https://maps.googleapis.com/maps/api/timezone/json?location=".$loc->{'lat'}.",".$loc->{'lng'}."&timestamp=".strftime("%s",gmtime())."&sensor=false&language=fr&api=".$conf_google_api;
       my $timezone_json = get($req);
-      my $timezone = json_to_perl($timezone_json);
+      my $timezone = from_json($timezone_json);
       if($timezone->{'status'} eq 'OK') {
         $now_string = strftime "%a %b %e %H:%M:%S %Y", gmtime(time + $timezone->{'rawOffset'} + $timezone->{'dstOffset'});
         $now_string = $timezone->{'timeZoneId'} . ": " . $now_string;
