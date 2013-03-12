@@ -12,33 +12,17 @@ use Data::Dumper;
 # Plugin object constructor
 sub new {
   my ($package) = shift;
-  my $self = bless {@_}, $package;
-  $self->{SESSION_ID} = POE::Session->create(object_states => [$self => [qw(_start)],],)->ID();
-  return $self;
+  return bless {}, $package;
 }
 
 sub PCI_register {
   my ($self, $irc) = splice @_, 0, 2;
-  $self->{irc} = $irc;
   $irc->plugin_register($self, 'SERVER', qw(public));
   return 1;
 }
 
 sub PCI_unregister {
-  my ($self, $irc) = splice @_, 0, 2;
-  delete $self->{irc};
-
-  # Plugin is dying make sure our POE session does as well.
-  $poe_kernel->refcount_decrement($self->{SESSION_ID}, __PACKAGE__);
   return 1;
-}
-
-sub _start {
-  my ($kernel, $self) = @_[KERNEL, OBJECT];
-  $self->{SESSION_ID} = $_[SESSION]->ID();
-
-  # Make sure our POE session stays around. Could use aliases but that is so messy :)
-  $kernel->refcount_increment($self->{SESSION_ID}, __PACKAGE__);
 }
 
 sub S_public {
