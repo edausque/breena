@@ -55,7 +55,7 @@ sub S_public {
     my $weather_string = "Data not found.";
     my $weather_json = get("http://api.openweathermap.org/data/2.1/find/name?q=$city");
     my $weather = from_json($weather_json);
-    if($weather->{cod} eq '200') { 
+    if($weather->{cod} eq '200') {
       my $last_update = int((time - $weather->{'list'}[0]->{'dt'})/60);
       my $temp_celcius = $weather->{'list'}[0]->{'main'}->{'temp'} - 273.15;
       $weather_string = "$last_update minutes ago at $weather->{'list'}[0]->{'name'} ($weather->{'list'}[0]->{'sys'}->{'country'}): $weather->{'list'}[0]->{'weather'}[0]->{'description'}, $temp_celcius℃. humidity: $weather->{'list'}[0]->{'main'}->{'humidity'}%. cloudiness: $weather->{'list'}[0]->{'clouds'}->{'all'}%. wind speed: $weather->{'list'}[0]->{'wind'}->{'speed'}mps. pressure: $weather->{'list'}[0]->{'main'}->{'pressure'}hPa.";
@@ -65,4 +65,4 @@ sub S_public {
   }
   return PCI_EAT_NONE; # Default action is to allow other plugins to process it.
 }
-
+1;
