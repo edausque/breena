@@ -42,7 +42,7 @@ sub S_public {
     if($weather->{cod} eq '200') {
       my $last_update = int((time - $weather->{'list'}[0]->{'dt'})/60);
       my $temp_celcius = int($weather->{'list'}[0]->{'main'}->{'temp'} - 273.15);
-      $weather_string = "$last_update minutes ago in $weather->{'list'}[0]->{'name'} ($weather->{'list'}[0]->{'sys'}->{'country'}): $weather->{'list'}[0]->{'weather'}[0]->{'description'}, $temp_celcius℃. humidity: $weather->{'list'}[0]->{'main'}->{'humidity'}%. cloudiness: $weather->{'list'}[0]->{'clouds'}->{'all'}%. wind speed: $weather->{'list'}[0]->{'wind'}->{'speed'}mps. pressure: $weather->{'list'}[0]->{'main'}->{'pressure'}hPa.";
+      $weather_string = "$last_update minutes ago in $weather->{'list'}[0]->{'name'} ($weather->{'list'}[0]->{'sys'}->{'country'}): $weather->{'list'}[0]->{'weather'}[0]->{'description'}, $temp_celcius℃. humidity: $weather->{'list'}[0]->{'main'}->{'humidity'}%. cloudiness: $weather->{'list'}[0]->{'clouds'}->{'all'}%. wind speed: $weather->{'list'}[0]->{'wind'}->{'speed'}mps. pressure: $weather->{'list'}[0]->{'main'}->{'pressure'}hPa. $weather->{'list'}[0]->{'url'}";
     }
     $irc->yield(privmsg => $channel => "$weather_string");
     return PCI_EAT_PLUGIN;    # We don't want other plugins to process this
