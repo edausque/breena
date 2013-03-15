@@ -23,6 +23,7 @@ sub PCI_unregister {
 }
 
 sub bot_timer {
+  my ($self, $irc) = splice @_, 0, 2;
   $irc->yield(privmsg => $_[ARG3] => "$_[ARG1]: ding!$_[ARG0]")
 }
 
