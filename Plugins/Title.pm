@@ -32,7 +32,7 @@ sub S_public {
   my ($channel) = ${$_[1]}->[0];
   my ($msg)     = ${$_[2]};
 
-  my $ua = LWP::UserAgent->new;
+  my $ua = LWP::UserAgent->new(timeout => 5);
   my $finder = URI::Find->new(sub {
     my($uri, $orig_uri) = @_;
     my $response = $ua->get($uri);
