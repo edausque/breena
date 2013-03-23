@@ -6,10 +6,6 @@ use POE::Component::IRC::Plugin qw( :ALL );
 use Config::Simple;
 
 my ($dirpath) = (__FILE__ =~ m{^(.*/)?.*}s);
-my $conf_file = "${dirpath}../breena.conf";
-
-my $conf = new Config::Simple("$conf_file") or die "impossible de trouver $conf_file";
-my $conf_nick = $conf->param("nick");
 
 # Plugin object constructor
 sub new {
@@ -35,8 +31,11 @@ sub S_public {
   my ($channel) = ${$_[1]}->[0];
   my ($msg)     = ${$_[2]};
 
-  if ($msg =~ /^$conf_nick.*danse$/) {
-    $irc->yield(ctcp => $channel => "ACTION danse.");
+  if ($msg =~ /^(.*\s)*danse(\s.*)*$/) {
+    $irc->yield(ctcp => $channel => "ACTION danse: :D\\-<");
+    $irc->yield(ctcp => $channel => "ACTION danse: :D|-<");
+    $irc->yield(ctcp => $channel => "ACTION danse: :D/-<");
+    $irc->yield(ctcp => $channel => "ACTION danse: :D|-<");
     return PCI_EAT_PLUGIN;    # We don't want other plugins to process this
   }
   return PCI_EAT_NONE; # Default action is to allow other plugins to process it.
