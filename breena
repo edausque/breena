@@ -7,8 +7,9 @@
 
 use warnings;
 use strict;
+use IRC::Utils qw(parse_user lc_irc);
 use POSIX qw(strftime);
-use POE;
+use POE qw(Component::IRC Component::IRC::Plugin::Connector);
 use POE::Component::IRC;
 use Time::HiRes qw(time);
 use Config::Simple;
@@ -38,6 +39,8 @@ POE::Session->create(
     irc_001		=> \&on_connect,
     irc_public		=> \&on_public,
     irc_ctcp_action	=> \&on_ctcp_action,
+    irc_join            => \&on_join,
+    irc_part            => \&on_part,
     irc_quit		=> \&on_quit,
     irc_disconnected	=> \&bot_reconnect,
     bot_timer		=> \&bot_timer,
@@ -65,7 +68,10 @@ foreach my $plugin (@plugins_files)
 }
 
 sub bot_connect {
+  my ($kernel, $heap) = @_[KERNEL ,HEAP];
   $irc->yield(register => "all");
+  $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
+  $irc->plugin_add( 'Connector' => $heap->{connector} );
   $irc->yield(
     connect => {
       Nick     => "$conf_nick",
@@ -109,7 +115,6 @@ sub on_ctcp_action {
 sub on_quit {
   my ($kernel, $who, $msg) = @_[KERNEL, ARG0, ARG1];
   my $nick    = (split /!/, $who)[0];
-  my $ts      = scalar localtime;
   if (($msg =~ /^Ping timeout$/) && ($nick eq 'Christina')) {
     $irc->yield(privmsg => "$conf_channel" => "hihihi");
   }
@@ -117,6 +122,24 @@ sub on_quit {
 
 sub bot_timer {
   $irc->yield(privmsg => "$conf_channel" => "$_[ARG1]: ding!$_[ARG0]")
+}
+
+sub on_join {
+  my $nick = parse_user($_[ARG0]);
+  my $channel = $_[ARG1];
+  if($nick ne $conf_nick) {
+    $irc->yield(privmsg => $channel => "Hello $nick !");
+  } else {
+    $irc->yield(privmsg => $channel => "Hello !");
+  }
+}
+
+sub on_part {
+  my $nick = parse_user($_[ARG0]);
+  my $channel = $_[ARG1];
+  if($nick ne $conf_nick) {
+    $irc->yield(privmsg => $channel => "Bye $nick !");
+  }
 }
 
 sub on_public {
